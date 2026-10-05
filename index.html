@@ -57,7 +57,7 @@ button:focus-visible,select:focus-visible{outline:3px solid var(--bot);outline-o
 @keyframes imp{0%{transform:scale(.1) rotate(-25deg)}22%{transform:scale(1.15) rotate(6deg)}65%{opacity:1}100%{transform:scale(1) rotate(0);opacity:0}}
 .flame{transform-box:fill-box;transform-origin:bottom;animation:fl .35s ease-in-out infinite alternate}
 @keyframes fl{to{transform:scaleY(1.2) scaleX(.9)}}
-:root,:root:not([data-theme="light"]){--ink:#2b1d10;--panel:#fff6dc;--hi:#ffd23f;--you:#ff4a3a;--bot:#2f7bff}
+:root,:root:not([data-theme="light"]){--ink:#2b1d10;--panel:#fff6dc;--hi:#ffd23f;--you:#2f7bff;--bot:#ff4a3a}
 body{background:radial-gradient(circle at 50% 0,#2f7d4f,#0f3a26 70%);color:#fdf3cf}
 h1{color:#ffe38a;text-shadow:3px 3px 0 #2b1d10}
 #wordBox,#hud,button,select{color:var(--ink)}
@@ -75,6 +75,26 @@ h1{color:#ffe38a;text-shadow:3px 3px 0 #2b1d10}
 @keyframes sn{from{transform:translateY(-30px)}to{transform:translateY(40px)}}
 .ember{animation:em 2.2s ease-out infinite}
 @keyframes em{from{transform:translateY(30px);opacity:1}to{transform:translateY(-70px);opacity:0}}
+#hud{display:none!important}
+#call,#results{position:absolute;left:10px;bottom:8px;max-width:calc(100% - 20px);background:var(--panel);color:var(--ink);border:3px solid var(--ink);border-radius:10px;padding:2px 12px;font-size:17px;box-shadow:3px 3px 0 var(--ink)}
+#call{font-weight:bold;white-space:nowrap}#call:empty{display:none}
+#results{display:none;flex-wrap:wrap;gap:2px 14px}#results.show{display:flex}
+#results b{font-family:'Permanent Marker',cursive;color:var(--you);font-weight:400}
+#results .bst{width:100%;font-size:14px;opacity:.85}
+.swoosh{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round;animation:sw .3s ease-out forwards}
+@keyframes sw{from{opacity:.95;transform:translateX(calc(var(--d)*-14px))}to{opacity:0;transform:translateX(calc(var(--d)*26px))}}
+[hidden]{display:none!important}
+input#cwpm{font:inherit;width:84px;color:var(--ink);background:#fff;border:3px solid var(--ink);border-radius:10px;padding:6px 8px}
+main{padding:8px;gap:8px}
+h1{font-size:clamp(24px,5vw,34px)}
+.hp{height:14px}
+.bar b{font-size:16px}
+#wordBox{padding:8px;min-height:64px;box-shadow:4px 4px 0 #2b1d10}
+#word{font-size:clamp(26px,6vw,44px)}
+#stage{width:min(100%,calc(42vh*2.8));margin:0 auto}
+#msg{min-height:0;font-size:18px}
+#word.long{font-size:clamp(20px,4.6vw,32px)}
+#word.xl{font-size:clamp(16px,3.4vw,24px);letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -82,59 +102,75 @@ h1{color:#ffe38a;text-shadow:3px 3px 0 #2b1d10}
 <h1>Type Duel</h1>
 <div class="bars">
  <div class="bar"><b>You</b><div class="hp" id="hpYou"><i></i></div></div>
- <div class="bar right"><b>Rival</b><div class="hp" id="hpBot"><i></i></div></div>
+ <div class="bar right"><b>Enemy</b><div class="hp" id="hpBot"><i></i></div></div>
 </div>
 <div id="wordBox"><div id="word">Press Space to start</div><div id="botProg"></div></div>
 <div id="stage">
  <svg viewBox="0 0 700 250" aria-label="Two martial artists fighting"><g id="bg"></g><g id="you"></g><g id="bot"></g><g id="fx"></g></svg>
  <div id="pow">POW!</div>
  <div id="bname"></div>
- <div id="hud"><span>Speed <b id="wpm">0</b> WPM</span><span>Combo <b id="cmb">0</b></span><span>Accuracy <b id="acc">100%</b></span><span id="call"></span></div>
+ <div id="call"></div><div id="results"></div>
+ <div id="hud"><span>Speed <b id="wpm">0</b> WPM</span><span>Combo <b id="cmb">0</b></span><span>Accuracy <b id="acc">100%</b></span></div>
 </div>
-<div id="msg" aria-live="polite">First to type the word lands the punch. Empty the rival's bar to win.</div>
+<div id="msg" aria-live="polite">First to type the word lands the punch. Empty the enemy's health bar to win.</div>
 <div class="row">
  <label for="arena">Arena</label>
  <select id="arena"><option value="random" selected>Random</option><option value="jungle">Jungle</option><option value="desert">Desert</option><option value="snow">Snow</option><option value="volcano">Volcano</option><option value="beach">Beach</option></select>
- <label for="lvl">Rival speed</label>
- <select id="lvl"><option value="1.6">Easy</option><option value="2.6" selected>Medium</option><option value="4">Hard</option></select>
- <button id="start">Start fight (Space)</button>
+ <label for="lvl">Enemy speed</label>
+ <select id="lvl"><option value="10">Easy · 10 WPM</option><option value="25" selected>Medium · 25 WPM</option><option value="50">Hard · 50 WPM</option><option value="75">Extreme · 75 WPM</option><option value="100">Impossible · 100 WPM</option><option value="custom">Custom…</option></select>
+ <input id="cwpm" type="number" min="1" max="1000" value="40" placeholder="WPM" aria-label="Custom enemy WPM" hidden>
+ <button id="start">Start fight</button>
 </div>
 <input id="hidden" autocomplete="off" autocapitalize="off" aria-label="Typing input">
 </main>
 <script>
 const WORDS=`fast best mastermind random words keyboard lightning thunder ninja rocket punch champion jungle galaxy wizard dragon pixel turbo victory shadow blazing cheetah monsoon rhythm quick fierce legend stormy typing master tiger lion panther jaguar leopard falcon eagle hawk raven crow sparrow robin parrot pigeon owl swan crane heron pelican penguin dolphin whale shark octopus squid lobster crab shrimp turtle tortoise lizard gecko iguana cobra python viper snake frog toad salamander beetle spider scorpion hornet wasp butterfly moth dragonfly cricket grasshopper rabbit hare squirrel beaver otter badger fox wolf coyote bear panda koala kangaroo camel llama zebra giraffe elephant rhino hippo buffalo bison moose reindeer antelope gazelle monkey gorilla chimpanzee baboon lemur sloth armadillo hedgehog porcupine mongoose meerkat hyena cougar lynx bobcat walrus seal pony stallion donkey mule goat sheep lamb cow bull yak boar piglet rooster chicken turkey duck goose ostrich peacock flamingo toucan pheasant quail finch canary mountain valley river ocean desert forest meadow canyon glacier volcano island harbor lagoon waterfall tornado hurricane blizzard drizzle sunrise sunset twilight midnight morning evening autumn winter summer spring breeze whirlwind rainbow comet meteor planet nebula cosmos orbit eclipse crystal pebble boulder cavern tunnel prairie tundra savanna swamp marsh reef coral cliff ridge summit plateau oasis dune shore beach tide wave current rapids stream creek brook pond lake fountain geyser mist fog cloud storm gale tempest squall frost snowflake icicle hailstone sleet thaw bloom blossom petal orchid tulip lotus daisy violet jasmine lavender sunflower rose lily poppy clover fern moss ivy bamboo willow maple cedar pine oak birch redwood palm cactus acorn pinecone seedling sapling branch twig bark root thorn bramble thicket grove orchard garden harvest apple banana cherry grape lemon mango melon orange papaya peach pear plum berry coconut pineapple guava lychee fig date apricot kiwi pomegranate tomato potato carrot onion garlic ginger pepper cabbage lettuce spinach broccoli cucumber pumpkin radish turnip beetroot celery mushroom pasta noodle rice bread butter cheese yogurt cream honey sugar jaggery spice cinnamon cardamom turmeric saffron mustard coriander cumin basil mint thyme oregano parsley vanilla chocolate caramel pudding cookie biscuit cake pastry donut pancake waffle muffin sandwich burger pizza taco burrito sushi curry soup salad stew roast grill toast omelet porridge cereal almond cashew walnut peanut pistachio hazelnut raisin popcorn pretzel candy lollipop sorbet gelato sundae smoothie lemonade coffee espresso latte tea juice soda cocoa milkshake copper silver golden bronze iron steel platinum diamond emerald ruby sapphire amber pearl opal jade onyx topaz garnet quartz marble granite obsidian cobalt titanium mercury carbon neon argon helium oxygen hydrogen nitrogen sulfur silicon uranium plasma crimson scarlet maroon yellow green teal turquoise indigo purple magenta pink brown beige ivory charcoal azure cyan lime olive computer laptop monitor screen mouse cable battery charger speaker headset camera printer router server network internet website browser binary digital program software hardware compile debug script function variable array object string integer boolean loop module package library framework database query token cipher encrypt decode backup cursor window folder document spreadsheet password username profile account message notification download upload buffer cache memory processor circuit sensor drone robot android gadget device hotspot bandwidth protocol algorithm guitar piano violin drums flute trumpet saxophone harmonica ukulele cello harp banjo tabla sitar melody harmony chorus tempo beat bassline lyrics anthem ballad concert festival orchestra opera sonata symphony soundtrack acoustic electric vocal studio microphone playlist encore football tennis hockey rugby baseball basketball volleyball badminton boxing wrestling karate judo taekwondo kungfu archery fencing rowing sailing surfing skating skiing snowboard cycling marathon sprint relay hurdle javelin discus gymnastics swimming diving climbing trekking hiking camping fishing hunting yoga stretch tackle dribble striker goalie defender referee stadium trophy medal podium tournament league season rookie veteran captain coach rival opponent challenger contender underdog finalist doctor nurse teacher student professor engineer pilot sailor soldier knight warrior archer samurai pirate viking gladiator detective officer judge lawyer farmer baker butcher tailor carpenter plumber painter sculptor writer poet author editor journalist reporter actor singer dancer magician acrobat chef waiter driver mechanic scientist inventor explorer astronaut diver ranger guardian hermit merchant trader banker clerk mayor king queen prince princess emperor empress sorcerer witch giant dwarf elf goblin troll phoenix unicorn griffin mermaid centaur golem specter phantom vampire werewolf zombie mummy demon angel oracle prophet hero villain sidekick stranger traveler wanderer nomad rebel outlaw bandit spy assassin thief kitchen bedroom bathroom hallway balcony terrace attic basement garage cottage mansion palace castle fortress temple mosque church tower bridge market bazaar village city suburb highway avenue alley station airport museum theater cinema gallery school college campus hospital pharmacy bakery cafe restaurant hotel hostel lighthouse windmill factory warehouse workshop laboratory observatory arena colosseum pyramid monument statue plaza courtyard doorway ceiling floor stairs elevator chimney fireplace curtain carpet pillow blanket mattress cushion lantern candle mirror clock lamp shelf drawer cabinet wardrobe sofa chair table bench stool hammock umbrella suitcase backpack wallet purse helmet jacket sweater scarf gloves boots sandals sneakers hoodie jeans shirt sweatshirt apron uniform costume mask crown ring bracelet necklace earring watch glasses happy joyful cheerful gloomy angry furious calm peaceful brave fearless timid nervous anxious eager curious clever wise foolish silly gentle kind generous selfish humble proud stubborn patient restless lazy active energetic sleepy drowsy hungry thirsty grateful hopeful lonely friendly polite rude honest loyal faithful daring bold cautious careful careless reckless fearsome mighty powerful feeble fragile sturdy rugged smooth rough bumpy slippery sticky fluffy fuzzy silky glossy shiny dull bright dim colorful pale vivid crisp fresh stale rotten ripe sweet sour bitter salty spicy tangy mellow savory crunchy chewy juicy creamy running jumping flying crawling dancing singing laughing smiling shouting whispering thinking dreaming wandering exploring building crafting painting drawing writing reading learning teaching training fighting winning racing chasing escaping hiding seeking finding losing searching discovering inventing creating destroying repairing mending breaking bending twisting spinning rolling sliding gliding soaring leaping striking blocking dodging parrying kicking punching slashing charging retreating advancing defending attacking conquering surviving accelerate adventure alliance ambition anchor ancient animation answer anxiety apology arrow artist ascend atlas avalanche awaken badge balance balloon banner barrier basket battle beacon believe bicycle bonfire bounce bravery breakfast brilliant bubble bucket bundle burden cabin calendar canvas capture caravan carnival cascade catalog celebrate ceremony chamber channel chapter charity charm checkpoint circle citadel classic clumsy cluster compass complete concrete confetti connect courage cowboy creature crossing crowded cyclone dagger daylight dazzle decade defend delight deliver desire destiny dinosaur discover distance doodle double dreamer driftwood dynamic earnest echo elegant embrace empire enchant endless energy engine enigma enough envelope epic escape essence eternal evolve exact excite exhale expert express fabric fable famous fantasy feather festive fiction finale flash flicker flourish flutter focus footprint forever fortune fragment freedom friction frontier fusion future gallop gamble gather genuine gesture giggle glimmer glimpse glitter glow gossip gravity greeting grumble habit halfway hammer handsome hazard heritage hidden holiday homeland horizon hostile hunger hybrid icon idea igloo illusion imagine immense impact impulse include infinite inspire instant itinerary jackpot jigsaw journey joyride jubilee jumble justice kettle kindle kingdom kitten knowledge ladder landmark laughter launch legacy leisure lesson letter liberty lifetime limit linger liquid listen literal little lively lodge logic lovely lucky lullaby luxury machine magnet magnify majestic mammoth margin mariner marvel matrix maximum mention mercy mileage million mineral miracle mission mixture moment momentum monster mosaic motion movie mystery mythic napkin narrow nation nature nectar needle neighbor nimble noble notebook nothing novel nugget oblique obvious offer office onward opinion option ordinary origin outside oyster paddle paradox parade parcel passion pathway patrol pattern pencil penny perfect period picnic pillar pioneer playful pledge plenty pocket poetry polar portal potion powder praise precious prepare presence pretty prize problem promise protect puzzle quarter quest quiet quiver radiant rally ramble rapid rattle reality reason record reflect refuge regard relax remedy remote report rescue respect restore result reveal reward riddle ripple ritual roam robust romance rumble rustle sacred saddle safari sample sandbox satin scatter scenery schedule scholar scout scribble search secret section seeker select senior serene series shelter shimmer signal silence simple sketch skyline slumber snuggle soccer social solemn solid sonic sorrow source spark special speech spirit splash splendid spotlight sprout square stable stamp steady sticker stitch stomp story strange stripe strong submit subtle sudden summon sunbeam sunny supply supreme surface surprise survey suspect swagger symbol system tablet talent target tavern teapot tender terrain thimble thought thrill throne ticket timber tinker titan tomorrow topic torch trace trail transit travel treasure tremble tribe trick trouble trust tumble tune twist umpire unique unity universe upbeat uplift urban useful utmost vacant vagabond valiant valid vanish vapor vault velvet venture verse vessel vintage vision visit vital voyage wander warmth weather weekend welcome whisper whistle wild wisdom wonder worthy wrinkle yearn yonder zenith zephyr zigzag zodiac`.split(" ");
 const $=id=>document.getElementById(id);
-const S={l:8,a:45,b:140,c:20,d:130,e:28,f:5,g:-25,h:-15,x:0,y:0};
+const EXTRA_A="extraordinary unbelievable photosynthesis thermodynamics archaeological responsibility encyclopedia choreography idiosyncrasy onomatopoeia questionnaire pronunciation mischievous entrepreneur bureaucracy acquaintance conscientious miscellaneous rhythmically catastrophe hypothetical metropolitan philosophical sophisticated temperamental unpredictable vulnerability determination imagination pharmaceutical psychological relationship sustainability characteristic claustrophobia kaleidoscope quintessential mathematician simultaneously".split(" ");
+const EXTRA_B="uncharacteristically unconstitutionally incomprehensibility electroencephalogram disproportionate indistinguishable characteristically interdisciplinary institutionalization internationalization misunderstanding acknowledgement bureaucratically conscientiousness uncompromisingly psychoneuroimmunology otorhinolaryngology counterintuitively overintellectualization deinstitutionalization pseudoscientifically electrocardiogram immunohistochemistry spectrophotometer pharmacokinetics thermoregulation transubstantiation".split(" ");
+const byLen=(a,b)=>WORDS.filter(w=>w.length>=a&&w.length<=b);
+const POOLS={easy:[...new Set([...byLen(3,4),..."cat dog sun moon star tree fish bird rain wind fire rock sand wave leaf rose mint corn rice milk tea cup pen book desk door wall roof road bike ship boat jump kick hand foot nose ears hair eyes game play toy ball cake pie jam egg nut bean plum pear fig lime kiwi crab seal duck swan frog bear wolf deer goat lamb cow pig hen owl bat ant bee run hop win hit top red blue pink gold gray fast slow high low big hot cold wet dry day night".split(" ")])],medium:byLen(5,6),hard:byLen(7,8),extreme:byLen(9,10),impossible:[...new Set([...byLen(11,14),...EXTRA_A])],hardest:EXTRA_B};
+const TIERNAME={easy:"easy",medium:"medium",hard:"hard",extreme:"extreme",impossible:"impossible",hardest:"the hardest"};
+let tier="medium";
+const S={l:8,a:45,b:140,c:20,d:130,e:30,f:8,g:-28,h:-12,x:0,y:0};
 const mk=o=>({...S,...o});
 const POSE={
- jab:mk({a:88,b:92,l:14,x:30}),
- cross:mk({c:90,d:94,l:22,x:40,e:40,g:-35}),
- upper:mk({a:70,b:165,l:6,x:14,e:35,g:-30}),
- front:mk({e:88,f:92,l:-10,x:34,g:-8,h:-2}),
- round:mk({g:100,h:100,l:-22,x:38,a:30,b:150,c:10,d:140}),
- high:mk({e:125,f:125,l:-24,x:42,a:20,b:150,c:30,d:140}),
- hurt:mk({l:-28,a:15,b:40,c:10,d:30,x:-26,e:10,g:-30}),
- wind:mk({a:20,b:130,c:15,d:125,l:-10,x:-8,e:20,g:-30}),
- overhand:mk({a:150,b:100,l:26,x:38,e:38,g:-34}),
- side:mk({e:80,f:86,l:-32,x:38,g:-20,h:-5,a:60,b:140}),
- flying:mk({e:100,f:60,g:-60,h:-100,y:-42,l:-18,x:48,a:50,b:150,c:40,d:140}),
- spin:mk({g:112,h:112,l:-38,x:44,a:10,b:120,c:5,d:110,y:-8}),
- axe:mk({e:150,f:150,l:-32,x:38,y:-6,a:25,b:160,c:20,d:150}),
+ jab:mk({a:86,b:90,c:25,d:125,l:12,x:32,e:36,f:6,g:-30,h:-16}),
+ cross:mk({c:92,d:95,a:35,b:135,l:24,x:42,e:20,f:0,g:-46,h:-32}),
+ upper:mk({a:60,b:172,c:25,d:120,l:2,y:8,x:26,e:46,f:14,g:-36,h:-22}),
+ overhand:mk({a:150,b:105,c:20,d:125,l:26,x:38,e:38,f:8,g:-36,h:-20}),
+ front:mk({e:88,f:92,l:-14,x:30,g:-6,h:-2,a:30,b:150,c:50,d:130}),
+ side:mk({e:78,f:92,l:-38,x:36,g:-10,h:-4,a:40,b:140,c:-60,d:-100}),
+ round:mk({e:102,f:106,l:-30,x:34,g:-5,h:-3,a:30,b:120,c:-40,d:-90}),
+ high:mk({e:130,f:136,l:-32,x:36,g:-8,h:-4,a:10,b:120,c:-30,d:-70}),
+ axe:mk({e:160,f:166,l:-34,x:34,g:-8,h:-4,a:25,b:140,c:-35,d:-80}),
+ spin:mk({e:112,f:116,l:-46,x:38,g:-6,h:-3,a:20,b:100,c:-70,d:-110,y:-4}),
+ flying:mk({e:95,f:98,g:-70,h:-122,y:-46,l:-20,x:62,a:30,b:130,c:-50,d:-90}),
+ hurtFace:mk({l:-18,a:120,b:259,c:25,d:125,x:-18,e:14,g:-26}),
+ hurtHead:mk({l:6,a:125,b:262,c:128,d:263,x:-14,e:10,f:6,g:-24,y:4}),
+ hurtGut:mk({l:32,a:35,b:-80,c:35,d:-82,x:-12,e:25,f:10,g:-22,h:-20,y:6}),
+ lying:mk({y:62,l:-90,e:84,f:90,g:100,h:100,a:112,b:100,c:125,d:135,x:-46}),
+ hurt:mk({l:-28,a:15,b:40,c:10,d:30,x:-26,e:10,f:6,g:-30}),
  block:mk({a:55,b:170,c:45,d:165,l:-6,x:-6,e:20,g:-30}),
+ wind:mk({a:20,b:130,c:15,d:125,l:-10,x:-8,e:20,g:-30}),
+ kneel:mk({y:32,l:12,a:10,b:5,c:5,d:0,e:5,f:-90,g:-5,h:-92,x:-12}),
+ killUp:mk({x:68,e:150,f:160,l:-6,a:30,b:140,c:20,d:130,g:-10,h:-5}),
+ killHit:mk({x:68,e:150,f:100,l:8,a:60,b:150,c:30,d:140,g:-10,h:-5}),
+ ko:mk({y:32,l:50,a:5,b:0,c:0,d:-5,e:5,f:-90,g:-5,h:-92,x:-14}),
  win:mk({a:170,b:178,c:165,d:175,l:0})
 };
 const COMBO=["jab","cross","front","upper","jab","round","cross","high"];
 const FIN=["high","round","cross","front","flying","spin","axe"];
-const Man=(id,x,face)=>({id,x,face,last:"",until:0,w:0,cur:{...S},tgt:{...S},dead:false,t:0});
+const Man=(id,x,face)=>({id,x,face,last:"",until:0,w:0,fin:true,cur:{...S},tgt:{...S},dead:false,t:0});
 const you=Man("you",290,1),bot=Man("bot",410,-1);
 function go(m,p,hold=260){m.tgt={...p};clearTimeout(m.t);if(!m.dead&&p!==POSE.win)m.t=setTimeout(()=>{m.tgt={...S}},hold)}
 const seg=(x,y,a,L,f)=>{const r=a*Math.PI/180;return[x+Math.sin(r)*L*f,y+Math.cos(r)*L]};
 function draw(m){
- const c=m.cur,f=m.face,hx=m.x+c.x*f,hy=130+c.y+(m.dead?0:Math.sin(performance.now()/180+m.face)*1.6),lr=c.l*Math.PI/180;
+ const c=m.cur,f=m.face,hx=m.x+c.x*f+(m.fin?0:Math.sin(performance.now()/300+m.face*2)*3*f),hy=116+c.y+(m.fin?0:Math.sin(performance.now()/180+m.face)*1.6),lr=c.l*Math.PI/180;
  const sx=hx+Math.sin(lr)*48*f,sy=hy-Math.cos(lr)*48,dx=sx+Math.sin(lr)*18*f,dy=sy-Math.cos(lr)*18;
  const limb=(x,y,a,b,l,fist)=>{const p=seg(x,y,a,l,f),q=seg(p[0],p[1],b,l,f);return `<polyline points="${x},${y} ${p[0]},${p[1]} ${q[0]},${q[1]}"/>`+(fist?`<circle class="fist" cx="${q[0]}" cy="${q[1]}" r="6"/>`:"")};
  const g=$(m.id);
- g.innerHTML=`<circle cx="${dx}" cy="${dy}" r="16"/><line x1="${sx}" y1="${sy}" x2="${hx}" y2="${hy}"/>`+limb(sx,sy,c.c,c.d,27,1)+limb(hx,hy,c.g,c.h,30)+limb(hx,hy,c.e,c.f,30)+limb(sx,sy,c.a,c.b,27,1);
+ g.innerHTML=limb(hx,hy,c.g,c.h,38)+limb(hx,hy,c.e,c.f,38)+`<line x1="${sx}" y1="${sy}" x2="${hx}" y2="${hy}"/><circle cx="${dx}" cy="${dy}" r="16"/>`+limb(sx,sy,c.c,c.d,28,1)+limb(sx,sy,c.a,c.b,28,1);
  g.setAttribute("transform",m.dead?`translate(0 40) rotate(${-85*f} ${hx} ${hy})`:"");
 }
 function tick(){for(const m of[you,bot]){for(const k in m.cur)m.cur[k]+=(m.tgt[k]-m.cur[k])*.3;draw(m)}requestAnimationFrame(tick)}
@@ -151,8 +187,9 @@ let curBiome="jungle";
 function setBiome(k){curBiome=k;const b=BIOMES[k],g=$("bg");g.innerHTML=b.svg;g.classList.remove("fade");void g.getBoundingClientRect();g.classList.add("fade");
  document.body.style.background=`radial-gradient(circle at 50% 0,${b.page[0]},${b.page[1]} 70%)`;$("bname").textContent=b.name}
 function pickBiome(){const ks=Object.keys(BIOMES).filter(k=>k!==curBiome);return ks[Math.floor(Math.random()*ks.length)]}
-let rounds=0,fighting=false;
-let typed=0,wrong=0,t0=0,combo=0,hudT=null;
+let rounds=0,fighting=false,endT=[];
+let wordStart=0,botDur=1e9,botT=0,activeMs=0,lastT=0,typed=0,wrong=0,t0=0,combo=0,hudT=null,maxCombo=0;
+let best={w:0,a:0,c:0};try{Object.assign(best,JSON.parse(localStorage.getItem("tdBest")||"{}"))}catch(e){}
 const NS="http://www.w3.org/2000/svg";
 function burst(x,y,col,n,nr){const g=$("fx");
  if(!nr){const r=document.createElementNS(NS,"circle");r.setAttribute("cx",x);r.setAttribute("cy",y);r.setAttribute("r",18);r.setAttribute("class","ring");g.appendChild(r);setTimeout(()=>r.remove(),450)}
@@ -161,63 +198,81 @@ function burst(x,y,col,n,nr){const g=$("fx");
   l.style.setProperty("--dx",Math.cos(a)*d+"px");l.style.setProperty("--dy",Math.sin(a)*d+"px");l.setAttribute("class","spark");l.style.stroke=col;g.appendChild(l);setTimeout(()=>l.remove(),500)}}
 function fx(def,blocked){burst(def.x+def.face*26,95,blocked?"#38bdf8":"#ffb400",blocked?8:18);
  if(!blocked){const s=$("stage");s.classList.remove("shake");void s.offsetWidth;s.classList.add("shake")}}
-function hud(){const m=Math.max((Date.now()-t0)/60000,1/60);$("wpm").textContent=t0?Math.round(typed/5/m):0;$("cmb").textContent=combo;$("acc").textContent=(typed+wrong?Math.round(typed/(typed+wrong)*100):100)+"%"}
+function hud(){const m=Math.max(activeMs/60000,1/60);$("wpm").textContent=t0?Math.round(typed/5/m):0;$("cmb").textContent=combo;$("acc").textContent=(typed+wrong?Math.round(typed/(typed+wrong)*100):100)+"%"}
 let hp={you:100,bot:100},word="",pos=0,live=false,timer=null,prog=0,botN=0,speed=2.6;
 function setHp(){$("hpYou").firstElementChild.style.width=hp.you+"%";$("hpBot").firstElementChild.style.width=hp.bot+"%"}
-function render(){const w=$("word");w.innerHTML="";[...word].forEach((ch,i)=>{const s=document.createElement("span");s.textContent=ch;if(i<pos)s.className="ok";else if(i===pos)s.className="cur";w.appendChild(s)})}
-function nextWord(){if($("arena").value==="random"&&rounds>0&&rounds%5===0)setBiome(pickBiome());rounds++;let w;do{w=WORDS[Math.floor(Math.random()*WORDS.length)]}while(w===word);word=w;pos=0;prog=0;botN=0;$("botProg").style.width="0";render();live=true}
+function render(){const w=$("word");w.classList.toggle("long",word.length>11);w.classList.toggle("xl",word.length>16);w.innerHTML="";[...word].forEach((ch,i)=>{const s=document.createElement("span");s.textContent=ch;if(i<pos)s.className="ok";else if(i===pos)s.className="cur";w.appendChild(s)})}
+function nextWord(){rounds++;let w;const P=POOLS[tier];do{w=P[Math.floor(Math.random()*P.length)]}while(w===word&&P.length>1);word=w;pos=0;prog=0;botN=0;wordStart=performance.now();botDur=Math.max(30,word.length/speed*1000*(0.8+Math.random()*0.4));clearTimeout(botT);botT=setTimeout(()=>{if(live)hit("bot")},botDur);$("botProg").style.width="0";render();live=true}
 const NAMES={high:"Sky kick",round:"Roundhouse",cross:"Iron fist",front:"Front kick",flying:"Flying kick",spin:"Spin kick",axe:"Axe kick"};
 const BAM=["SMASH!","BAM!","WHAM!","CRACK!","THWACK!"];
 const MOVES=["jab","cross","upper","overhand","front","side","round","high","axe","spin"];
 let ct=0;
 function call(t){$("call").textContent=t;clearTimeout(ct);ct=setTimeout(()=>$("call").textContent="",2000)}
-function attack(m,n,hold){clearTimeout(m.w);go(m,POSE.wind,40);m.until=Date.now()+hold+70;m.w=setTimeout(()=>go(m,POSE[n],hold),70)}
+const PUNCH=["jab","cross","upper","overhand"],HEAD=["round","high","axe"];
+const react=n=>PUNCH.includes(n)?"hurtFace":HEAD.includes(n)?"hurtHead":"hurtGut";
+const KICKS=["front","side","round","high","axe","spin","flying"];
+function swoosh(m,n){const k=KICKS.includes(n),x=m.x+m.face*(k?34:30),y=k?118:82,p=document.createElementNS(NS,"path");
+ p.setAttribute("d",`M${x} ${y} q${m.face*30} -18 ${m.face*62} 2`);p.setAttribute("class","swoosh");p.style.setProperty("--d",m.face);$("fx").appendChild(p);setTimeout(()=>p.remove(),320)}
+function attack(m,n,hold){clearTimeout(m.w);go(m,POSE.wind,40);m.until=Date.now()+hold+70;m.w=setTimeout(()=>go(m,POSE[n],hold),70);setTimeout(()=>swoosh(m,n),90)}
 function strike(m){let n;do{n=MOVES[Math.floor(Math.random()*MOVES.length)]}while(n===m.last);m.last=n;attack(m,n,230);
  const d=m===you?bot:you;
- setTimeout(()=>{if(!live)return;burst(d.x+d.face*22,100,m===you?"#ffb347":"#7cc4ff",4,1);if(Date.now()>d.until)go(d,mk({l:-6,x:-7,a:50,b:130}),110)},130)}
+ setTimeout(()=>{if(!live)return;burst(d.x+d.face*22,100,m===you?"#7cc4ff":"#ffb347",4,1);if(Date.now()>d.until)go(d,POSE[react(n)],170)},130)}
 function impact(d,txt,col,sc){
  let pts="";for(let i=0;i<20;i++){const r=i%2?28:46,a=i*Math.PI/10;pts+=(Math.cos(a)*r).toFixed(1)+","+(Math.sin(a)*r).toFixed(1)+" "}
  const e=document.createElementNS(NS,"g");e.setAttribute("transform",`translate(${d.x+d.face*22} 78) scale(${sc})`);
  e.innerHTML=`<g class="imp"><polygon points="${pts}" fill="${col}" stroke="#2b1d10" stroke-width="4" stroke-linejoin="round"/><text y="6" text-anchor="middle" font-family="Permanent Marker,cursive" font-size="16" fill="#fff" stroke="#2b1d10" stroke-width="5" paint-order="stroke">${txt}</text></g>`;
  $("fx").appendChild(e);setTimeout(()=>e.remove(),750)}
 function hit(who){
- if(!live)return;live=false;
- const att=who==="you"?you:bot,def=who==="you"?bot:you,k=who==="you"?"bot":"you",me=who==="you"?"You":"Rival";
- if(who==="you")combo++;else combo=0;
- const ratio=who==="you"?prog/word.length:pos/word.length,blocked=ratio>=0.5;
+ if(!live)return;live=false;clearTimeout(botT);
+ const att=who==="you"?you:bot,def=who==="you"?bot:you,k=who==="you"?"bot":"you",me=who==="you"?"You":"Enemy";
+ if(who==="you"){combo++;maxCombo=Math.max(maxCombo,combo)}else combo=0;
+ const ratio=who==="you"?Math.min(1,(performance.now()-wordStart)/botDur):pos/word.length,blocked=ratio>=0.5;
  const mv=FIN[Math.floor(Math.random()*FIN.length)],dmg=blocked?5:(who==="you"?20+Math.min(combo-1,3)*5:20);
  attack(att,mv,520);
  setTimeout(()=>{
   hp[k]=Math.max(0,hp[k]-dmg);setHp();
-  go(def,blocked?POSE.block:POSE.hurt,blocked?520:420);
+  go(def,blocked?POSE.block:POSE[react(mv)],blocked?520:650);
   impact(def,blocked?"CLANG!":BAM[Math.floor(Math.random()*BAM.length)],blocked?"#7dd3fc":"#ff9f1c",blocked?1:1.3);
   fx(def,blocked);
   call(me+": "+NAMES[mv]+(blocked?" blocked, -5":", -"+dmg)+(who==="you"&&combo>1&&!blocked?"  COMBO x"+combo:""));
   hud();
  },210);
- $("msg").textContent=blocked?(k==="you"?"You blocked it and counter-punched!":"Rival blocked and counter-punched!"):(who==="you"?"You got there first!":"Rival was faster!");
+ $("msg").textContent=blocked?(k==="you"?"You blocked it and counter-punched!":"Enemy blocked and counter-punched!"):(who==="you"?"You got there first!":"Enemy was faster!");
  if(blocked){
-  setTimeout(()=>{attack(def,"cross",420);setTimeout(()=>{go(att,POSE.hurt,350);hp[who]=Math.max(0,hp[who]-5);setHp();impact(att,"WHAM!","#ff9f1c",1);burst(att.x+att.face*26,95,"#ffb400",12);call((k==="you"?"You":"Rival")+": counter punch, -5")},210)},650);
+  setTimeout(()=>{attack(def,"cross",420);setTimeout(()=>{go(att,POSE.hurtFace,500);hp[who]=Math.max(0,hp[who]-5);setHp();impact(att,"WHAM!","#ff9f1c",1);burst(att.x+att.face*26,95,"#ffb400",12);call((k==="you"?"You":"Enemy")+": counter punch, -5")},210)},650);
  }
  setTimeout(()=>{if(hp.you<=0||hp.bot<=0)end();else nextWord()},blocked?1350:800);
 }
 function end(){
- clearInterval(timer);clearInterval(hudT);fighting=false;const won=hp.bot<=0,L=won?bot:you,W=won?you:bot;
- L.dead=true;go(L,POSE.hurt);go(W,POSE.win);burst(L.x,100,"#ffb400",30);
- $("word").textContent=won?"You win!":"Rival wins";
- hud();$("msg").textContent=(won?"Knockout! ":"Knocked out. ")+$("wpm").textContent+" WPM, "+$("acc").textContent+" accuracy. Press Space to play again.";
- $("start").textContent="Play again (Space)";live=false;
+ clearInterval(timer);clearInterval(hudT);clearTimeout(botT);fighting=false;live=false;
+ const won=hp.bot<=0,L=won?bot:you,W=won?you:bot;
+ for(const m of[L,W]){clearTimeout(m.w);m.fin=true}
+ hud();$("call").textContent="";$("word").classList.remove("long","xl");$("word").textContent="K.O.!";
+ const T=(f,t)=>endT.push(setTimeout(f,t));
+ T(()=>go(L,POSE.kneel,1e6),300);
+ T(()=>{go(W,POSE.killUp,1e6);$("word").textContent="FINISH!"},1200);
+ T(()=>go(W,POSE.killHit,1e6),2100);
+ T(()=>{go(L,POSE.lying,1e6);impact({x:L.x-L.face*22,face:L.face},"BANG!","#ff9f1c",1.5);burst(L.x,95,"#ffb400",26);const s=$("stage");s.classList.remove("shake");void s.offsetWidth;s.classList.add("shake")},2250);
+ T(()=>burst(L.x-46*L.face,186,"#d8c9a8",12,1),2650);
+ T(()=>go(W,{...POSE.win,x:10},1e6),2800);
+ T(()=>{go(W,{...POSE.win,x:10},1e6);$("word").textContent="GAME OVER";hud();
+  const w=+$("wpm").textContent,a=parseInt($("acc").textContent),c=maxCombo,nb=[w>best.w,a>best.a,c>best.c];
+  best.w=Math.max(best.w,w);best.a=Math.max(best.a,a);best.c=Math.max(best.c,c);
+  try{localStorage.setItem("tdBest",JSON.stringify(best))}catch(e){}
+  $("results").innerHTML=`<span>Speed <b>${w}</b> WPM${nb[0]?" ★":""}</span><span>Accuracy <b>${a}%</b>${nb[1]?" ★":""}</span><span>Best combo <b>${c}</b>${nb[2]?" ★":""}</span><span class="bst">Your highest: ${best.w} WPM · ${best.a}% accuracy · combo ${best.c}   (★ = new record)</span>`;
+  $("results").classList.add("show");
+  $("msg").textContent=(won?"You win! ":"You lost. ")+"Press Space to play again.";$("start").textContent="Play again"},3100);
 }
 function start(){
- clearInterval(timer);fighting=true;rounds=0;{const v=$("arena").value;setBiome(v==="random"?pickBiome():v)}typed=wrong=0;combo=0;t0=Date.now();clearInterval(hudT);hudT=setInterval(hud,400);hud();$("call").textContent="";hp={you:100,bot:100};setHp();
- for(const m of[you,bot]){m.dead=false;m.tgt={...S}}
- speed=parseFloat($("lvl").value);$("msg").textContent="Type the word!";
+ endT.forEach(clearTimeout);endT=[];clearInterval(timer);clearTimeout(botT);fighting=true;rounds=0;{const v=$("arena").value;setBiome(v==="random"?pickBiome():v)}typed=wrong=0;combo=0;maxCombo=0;$("results").classList.remove("show");t0=Date.now();activeMs=0;lastT=Date.now();clearInterval(hudT);hudT=setInterval(hud,400);hud();$("call").textContent="";hp={you:100,bot:100};setHp();
+ for(const m of[you,bot]){clearTimeout(m.t);m.dead=false;m.fin=false;m.tgt={...S}}
+ {const v=$("lvl").value,wpm=v==="custom"?Math.min(1000,Math.max(1,+$("cwpm").value||30)):+v;speed=wpm/12;tier=wpm<=17?"easy":wpm<=37?"medium":wpm<=62?"hard":wpm<=87?"extreme":wpm<=110?"impossible":"hardest"}$("msg").textContent="Type the word! Enemy words: "+TIERNAME[tier]+".";
  $("hidden").focus();nextWord();
- timer=setInterval(()=>{if(!live)return;
-  prog+=speed*(0.5+Math.random())*0.06;
+ timer=setInterval(()=>{const now=Date.now(),dt=Math.min(now-lastT,250);lastT=now;if(!live)return;activeMs+=dt;
+  prog=Math.min(word.length,(performance.now()-wordStart)/botDur*word.length);
   $("botProg").style.width=Math.min(100,prog/word.length*100)+"%";
   const n=Math.floor(prog);if(n>botN&&n<word.length){botN=n;strike(bot)}
-  if(prog>=word.length)hit("bot")},60);
+  },60);
 }
 function press(k){
  if(!live||k.length!==1)return;
@@ -225,15 +280,21 @@ function press(k){
  else{wrong++;const w=$("word");w.classList.remove("bad");void w.offsetWidth;w.classList.add("bad")}
 }
 document.addEventListener("keydown",e=>{
- if(e.target.tagName==="SELECT"||e.ctrlKey||e.metaKey)return;
+ if(e.target.tagName==="SELECT"||e.target.id==="cwpm")return;
+ if((e.ctrlKey||e.metaKey)&&fighting&&"spfgukold".includes(e.key.toLowerCase())&&e.key.length===1){e.preventDefault();return}
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(e.code==="Space"){e.preventDefault();if(!fighting&&!e.repeat)start();return}
+ if(fighting&&(e.key.length===1||["Enter","Backspace","Tab","Escape"].includes(e.key)))e.preventDefault();
  press(e.key)});
+$("hidden").addEventListener("blur",()=>{if(fighting)setTimeout(()=>$("hidden").focus(),0)});
 document.addEventListener("keyup",e=>{if(e.code==="Space"&&e.target.tagName==="BUTTON")e.preventDefault()});
 $("hidden").addEventListener("input",e=>{const v=e.target.value;if(v)press(v.slice(-1));e.target.value=""});
 $("start").addEventListener("click",start);
 $("wordBox").addEventListener("click",()=>$("hidden").focus());
 setHp();setBiome("jungle");
-$("arena").addEventListener("change",e=>{const v=e.target.value;setBiome(v==="random"?pickBiome():v)});
+$("lvl").addEventListener("change",()=>{$("cwpm").hidden=$("lvl").value!=="custom";$("lvl").blur()});
+$("cwpm").addEventListener("keydown",e=>{if(e.key==="Enter")e.target.blur()});
+$("arena").addEventListener("change",e=>{e.target.blur();const v=e.target.value;setBiome(v==="random"?pickBiome():v)});
 </script>
 </body>
 </html>
